@@ -1,14 +1,15 @@
-const db = require('../../config/db.js');
+const {pool} = require('../../config/db.js');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { generateAccessToken, generateRefreshToken } = require('../../utils/tokens.js');
+const { ref } = require('node:process');
 
 exports.studentRegister = async (req, res) => {
   const { firstName, lastName, email, phone, password } = req.body;
 
   try {
     // Check if student already exists
-    const existingStudent = await db.query(
+    const existingStudent = await pool.query(
       `SELECT * FROM student WHERE email = $1`,
       [email]
     );
@@ -22,7 +23,7 @@ exports.studentRegister = async (req, res) => {
     const passwordHash = await bcrypt.hash(password, salt);
 
     // Insert new student
-    const newStudent = await db.query(
+    const newStudent = await pool.query(
       `INSERT INTO student (first_name, last_name, email, phone, password_hash) 
        VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, email, phone, role`,
       [firstName, lastName, email, phone, passwordHash]
@@ -41,7 +42,7 @@ exports.studentLogin = async (req, res) => {
   
   try {
     // Check if student exists
-    const student = await db.query(
+    const student = await pool.query(
       `SELECT * FROM student WHERE email = $1`,
       [email]
     );
@@ -71,7 +72,7 @@ exports.studentLogin = async (req, res) => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
 
-    await db.query(
+    await pool.query(
       `INSERT INTO refresh_tokens (student_id, token, expires_at) 
        VALUES ($1, $2, $3)`,
       [student.rows[0].id, refreshToken, expiresAt]
@@ -99,7 +100,7 @@ exports.refreshAccessToken = async (req, res) => {
       process.env.JWT_REFRESH_SECRET
     );
 
-    const tokenExists = await db.query(
+    const tokenExists = await pool.query(
       `SELECT * FROM refresh_tokens WHERE token = $1`,
       [refreshToken]
     );
@@ -122,11 +123,58 @@ exports.refreshAccessToken = async (req, res) => {
 exports.logout = async (req, res) => {
   const { refreshToken } = req.body;
 
-  await db.query(
+  await pool.query(
     `DELETE FROM refresh_tokens WHERE token = $1`,
     [refreshToken]
   );
+  if (refreshToken) {
+    res.clearCookie('refreshToken', { httpOnly: true, secure: true });
+  }
 
   res.status(200).json({ message: 'Logged out successfully' });
 };
 
+exports.getProfile = async (req, res) => {
+  const { studentId } = req.params;
+
+  try {
+    const student = await pool.query(
+      `SELECT id, first_name, last_name, email, phone 
+       FROM student 
+       WHERE id = $1`,
+      [studentId]
+    );
+
+    if (student.rows.length === 0) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    res.status(200).json({ student: student.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+exports.updateProfile = async (req, res) => {
+  const { studentId } = req.params;
+  const { firstName, lastName, email, phone } = req.body;
+
+  try {
+    const updatedStudent = await pool.query(
+      `UPDATE student 
+       SET first_name = $1, last_name = $2, email = $3, phone = $4
+       WHERE id = $5
+       RETURNING id, first_name, last_name, email, phone`,
+      [firstName, lastName, email, phone, studentId]
+    );
+
+    if (updatedStudent.rows.length === 0) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    res.status(200).json({ student: updatedStudent.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
