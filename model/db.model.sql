@@ -62,6 +62,8 @@ CREATE TABLE bookings (
     CHECK (end_time > start_time)
 );
 
+ALTER TABLE bookings DROP CONSTRAINT no_overlapping_bookings;
+
 CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 ALTER TABLE bookings
@@ -70,8 +72,7 @@ EXCLUDE USING gist (
     resource_id WITH =,
     tsrange(start_time, end_time) WITH &&
 )
-WHERE (status IN ('pending', 'approved'));
-
+WHERE (status = 'approved');
 
 CREATE TABLE policies (
     id SERIAL PRIMARY KEY,
