@@ -2,6 +2,9 @@ const express = require('express');
 const mainRouter = express.Router();
 const authRouter = require('../auth/router/auth.route.js');
 const resourcesRouter = require('../resources/router/resources.route.js');
+const bookingRouter = require('../booking/router/booking.route.js');
+
+mainRouter.use('/bookings', bookingRouter);
 
 mainRouter.use('/resources', resourcesRouter);
 
