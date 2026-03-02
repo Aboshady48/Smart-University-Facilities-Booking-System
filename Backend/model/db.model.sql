@@ -111,3 +111,4 @@ CREATE INDEX idx_bookings_resource ON bookings(resource_id);
 CREATE INDEX idx_bookings_time ON bookings(start_time, end_time);
 
 
+
