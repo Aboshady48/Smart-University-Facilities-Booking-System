@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+/* === ENABLE CLASS-BASED DARK MODE (Tailwind v4) === */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Smooth color transition globally */
+* {
+  @apply transition-colors duration-300;
+}
+
+/* Gradient background layers */
+body {
+  @apply bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300;
+}
+
+.dark body {
+  @apply bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800;
+}
+
+/* Custom Glass Card */
+.glass-card {
+  @apply backdrop-blur-xl bg-white/70 dark:bg-white/5 
+         border border-white/20 dark:border-white/10 
+         shadow-2xl rounded-2xl;
+}
+
+/* Premium Button */
+.btn-primary {
+  @apply relative overflow-hidden px-5 py-2.5 rounded-lg font-semibold text-white 
+         bg-gradient-to-r from-blue-600 to-indigo-600 
+         hover:from-blue-700 hover:to-indigo-700 
+         active:scale-95 transition-all duration-200 shadow-lg;
+}
+
+/* Input Style */
+.input-modern {
+  @apply w-full px-4 py-2.5 rounded-lg 
+         bg-white/70 dark:bg-gray-800/80 
+         border border-gray-300 dark:border-gray-600 
+         text-gray-900 dark:text-white
+         focus:outline-none focus:ring-2 focus:ring-blue-500 
+         focus:border-blue-500 shadow-sm;
+}
